@@ -1,0 +1,202 @@
+:root {
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-title: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-code: "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace;
+
+  --text: #1f2328;
+  --text-muted: #646b74;
+  --text-faint: #a3a9b1;
+  --page-bg: #ffffff;
+  --panel-bg: #ffffff;
+  --sidebar-bg: #f6f7f9;
+  --chrome-bg: #eef0f3;
+  --input-bg: #ffffff;
+  --border: #dde1e6;
+  --hover: rgba(31, 35, 40, 0.06);
+  --hover-strong: rgba(31, 35, 40, 0.1);
+  --selected: rgba(31, 35, 40, 0.08);
+  --accent: #6b4fbb;
+  --accent-soft: rgba(107, 79, 187, 0.13);
+  --link: #5b3fb0;
+  --highlight: rgba(255, 196, 0, 0.45);
+  --danger: #c62828;
+  --warn: #d58a00;
+  --ok: #2e9d57;
+  --backdrop: rgba(20, 22, 26, 0.32);
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.12);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --text: #e4e6ea;
+  --text-muted: #9aa1ab;
+  --text-faint: #5f656e;
+  --page-bg: #1c1e22;
+  --panel-bg: #25282d;
+  --sidebar-bg: #17191c;
+  --chrome-bg: #131518;
+  --input-bg: #1c1e22;
+  --border: #33373e;
+  --hover: rgba(255, 255, 255, 0.06);
+  --hover-strong: rgba(255, 255, 255, 0.11);
+  --selected: rgba(255, 255, 255, 0.08);
+  --accent: #a58cf0;
+  --accent-soft: rgba(165, 140, 240, 0.18);
+  --link: #b8a3f5;
+  --highlight: rgba(255, 196, 0, 0.32);
+  --danger: #ef6b6b;
+  --warn: #e7a83a;
+  --ok: #52c07c;
+  --backdrop: rgba(0, 0, 0, 0.5);
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  height: 100%;
+}
+
+button {
+  font: inherit;
+}
+
+button.primary,
+button.danger,
+.welcome .actions button,
+.dialog .buttons button {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+button.primary,
+.welcome .actions button.primary,
+.dialog .buttons button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+:root[data-theme="dark"] button.primary {
+  color: #15121f;
+}
+button.danger,
+.dialog .buttons button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+button.primary:hover,
+button.danger:hover {
+  filter: brightness(1.08);
+}
+.welcome .actions button:not(.primary):hover,
+.dialog .buttons button:not(.primary):not(.danger):hover {
+  background: var(--hover);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--hover-strong);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-faint);
+}
+
+/* ------------------------------------------------------------------ editor */
+
+.markdown-editor .milkdown {
+  --crepe-color-background: var(--page-bg);
+  --crepe-color-on-background: var(--text);
+  --crepe-color-surface: var(--sidebar-bg);
+  --crepe-color-surface-low: var(--chrome-bg);
+  --crepe-color-on-surface: var(--text);
+  --crepe-color-on-surface-variant: var(--text-muted);
+  --crepe-color-outline: var(--text-faint);
+  --crepe-color-primary: var(--accent);
+  --crepe-color-secondary: var(--accent-soft);
+  --crepe-color-on-secondary: var(--text);
+  --crepe-color-inverse: var(--text);
+  --crepe-color-on-inverse: var(--page-bg);
+  --crepe-color-inline-code: #b3261e;
+  --crepe-color-error: var(--danger);
+  --crepe-color-hover: var(--hover);
+  --crepe-color-selected: var(--selected);
+  --crepe-color-inline-area: var(--hover-strong);
+  --crepe-base-font-size: 1em;
+  --crepe-font-title: var(--font-title);
+  --crepe-font-default: var(--font-body);
+  --crepe-font-code: var(--font-code);
+  --crepe-shadow-1: var(--shadow);
+  --crepe-shadow-2: var(--shadow-lg);
+  background: transparent;
+}
+
+:root[data-theme="dark"] .markdown-editor .milkdown {
+  --crepe-color-inline-code: #ff8a80;
+}
+
+/* Crepe pads the editor for its block handles; line our text up with the title. */
+.markdown-editor .milkdown .ProseMirror {
+  padding: 4px 0 40px 0;
+  font-size: 1em;
+  line-height: 1.65;
+}
+.markdown-editor .milkdown .milkdown-block-handle {
+  margin-left: -8px;
+}
+
+.markdown-editor .page-link {
+  color: var(--link);
+  text-decoration: none;
+  background: var(--accent-soft);
+  border-radius: 4px;
+  padding: 0 4px;
+  cursor: pointer;
+  white-space: normal;
+}
+.markdown-editor .page-link::before {
+  content: "↗ ";
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+.markdown-editor .page-link:hover {
+  text-decoration: underline;
+}
+.markdown-editor .page-link.broken {
+  color: var(--danger);
+  background: transparent;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+.markdown-editor .page-link.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+}
