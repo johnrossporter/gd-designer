@@ -77,6 +77,7 @@ the same shape as the hierarchy:
 | Path | Purpose |
 | --- | --- |
 | `src-tauri/src/lib.rs` | Rust commands for reading/writing documents; plugin setup |
+| `src-tauri/icons/app-icon.svg` | App icon source; regenerate the sizes with `npx tauri icon src-tauri/icons/app-icon.svg` |
 | `src/stores/document.ts` | Document model: pages, hierarchy edits, title/link sync |
 | `src/stores/ui.ts` | UI state: active page, filter, dialogs, preferences |
 | `src/services/actions.ts` | Every user command (used by menus, shortcuts and buttons) |
