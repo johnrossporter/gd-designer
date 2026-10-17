@@ -518,6 +518,8 @@ function dropClass(id: string) {
 .label {
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Room for the slant of italic text (e.g. "Untitled"), which overflow would clip. */
+  padding-right: 0.2em;
 }
 .label.untitled {
   color: var(--text-muted);

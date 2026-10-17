@@ -15,6 +15,9 @@ export interface Settings {
   zoom: number;
   hierarchyWidth: number;
   hierarchyVisible: boolean;
+  mcpEnabled: boolean;
+  mcpPort: number;
+  mcpToken: string;
 }
 
 export const defaultSettings: Settings = {
@@ -24,6 +27,9 @@ export const defaultSettings: Settings = {
   zoom: 1,
   hierarchyWidth: 280,
   hierarchyVisible: true,
+  mcpEnabled: false,
+  mcpPort: 3917,
+  mcpToken: "",
 };
 
 const MAX_RECENT = 10;

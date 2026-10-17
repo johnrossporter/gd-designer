@@ -23,6 +23,25 @@ Built with [Tauri 2](https://tauri.app), [Vue 3](https://vuejs.org) + TypeScript
 - **Autosave**: changes are written about 0.75 s after you stop typing, and before switching
   documents or closing the window. The status bar shows the save state.
 - Light, dark and system themes; zoom; reopens the last document and page on launch.
+- **AI agent access (MCP)**: Tools > AI Agent Access lets agents such as Claude Code read and edit
+  the open document over the Model Context Protocol (see below).
+
+## AI agent access (MCP)
+
+When enabled (Tools > AI Agent Access), GDDesigner serves an MCP endpoint at
+`http://127.0.0.1:3917/mcp` (Streamable HTTP, JSON responses) while the app is running. It only
+listens on this computer and requires the bearer token shown in that dialog. To connect Claude Code,
+copy the command from the dialog, which looks like:
+
+```bash
+claude mcp add --transport http gddesigner http://127.0.0.1:3917/mcp --header "Authorization: Bearer <token>"
+```
+
+Tools: `list_pages`, `search_pages`, `get_page`, `create_page`, `update_page` (title, replace or
+append content), `move_page` and `delete_page`. Pages are also exposed as `gdd://page/{id}`
+resources. Agent edits go through the same document model as the UI, so they appear immediately,
+keep page links in sync and are autosaved. The Rust side (`src-tauri/src/mcp.rs`) is only the HTTP
+transport; the protocol and tools live in `src/mcp/handler.ts`.
 
 ## Development
 

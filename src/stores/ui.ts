@@ -35,6 +35,18 @@ export const useUiStore = defineStore("ui", () => {
   const confirmRequest = ref<ConfirmRequest | null>(null);
   const aboutOpen = ref(false);
   const shortcutsOpen = ref(false);
+  const mcpDialogOpen = ref(false);
+
+  /** State of the local MCP endpoint for AI agents. */
+  const mcp = reactive({
+    enabled: false,
+    port: 3917,
+    token: "",
+    running: false,
+    error: null as string | null,
+  });
+  /** Last change an agent made through MCP (shown in the status bar). */
+  const mcpActivity = ref<{ text: string; at: number } | null>(null);
 
   /** Incremented to ask a component to take focus. */
   const focusFilterTick = ref(0);
@@ -85,6 +97,9 @@ export const useUiStore = defineStore("ui", () => {
     confirmRequest,
     aboutOpen,
     shortcutsOpen,
+    mcpDialogOpen,
+    mcp,
+    mcpActivity,
     focusFilterTick,
     focusTitleTick,
     focusEditorTick,

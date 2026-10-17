@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Crepe } from "@milkdown/crepe";
 import { editorViewCtx } from "@milkdown/kit/core";
-import { callCommand, insert } from "@milkdown/kit/utils";
+import { callCommand, insert, replaceAll } from "@milkdown/kit/utils";
 import { redoCommand, undoCommand } from "@milkdown/kit/plugin/history";
 import { selectAll as selectAllCommand } from "@milkdown/kit/prose/commands";
 import { TextSelection } from "@milkdown/kit/prose/state";
@@ -36,11 +36,26 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 /** Set when the user has edited since the last save (avoids re-saving normalised but unedited markdown). */
 let dirty = false;
+/** The page content the editor last loaded or saved; anything else in the store came from outside. */
+let lastSynced = doc.pages[props.pageId]?.content ?? "";
 
 function save(markdown: string) {
   dirty = false;
+  lastSynced = markdown;
   doc.setContent(props.pageId, markdown);
 }
+
+// Content changed by someone other than this editor (an AI agent via MCP, or
+// link text rewritten after a rename): load it into the editor.
+watch(
+  () => doc.pages[props.pageId]?.content,
+  (content) => {
+    if (content === undefined || content === lastSynced || !crepe || !ready) return;
+    lastSynced = content;
+    dirty = false;
+    crepe.editor.action(replaceAll(content));
+  },
+);
 
 function withView<T>(fn: (view: import("@milkdown/kit/prose/view").EditorView) => T): T | undefined {
   if (!crepe || !ready) return undefined;

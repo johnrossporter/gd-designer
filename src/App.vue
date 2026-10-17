@@ -14,6 +14,8 @@ import StatusBar from "./components/StatusBar.vue";
 import WelcomeScreen from "./components/WelcomeScreen.vue";
 import PagePicker from "./components/PagePicker.vue";
 import Dialogs from "./components/Dialogs.vue";
+import McpDialog from "./components/McpDialog.vue";
+import { initMcp } from "./mcp/service";
 
 const doc = useDocumentStore();
 const ui = useUiStore();
@@ -66,7 +68,9 @@ const gridColumns = computed(() =>
 
 // ------------------------------------------------------------------ keyboard
 
-const modalOpen = computed(() => !!(ui.picker || ui.confirmRequest || ui.aboutOpen || ui.shortcutsOpen));
+const modalOpen = computed(
+  () => !!(ui.picker || ui.confirmRequest || ui.aboutOpen || ui.shortcutsOpen || ui.mcpDialogOpen),
+);
 
 function onKeydown(e: KeyboardEvent) {
   if (modalOpen.value) {
@@ -74,6 +78,7 @@ function onKeydown(e: KeyboardEvent) {
       ui.confirmRequest?.resolve(false);
       ui.aboutOpen = false;
       ui.shortcutsOpen = false;
+      ui.mcpDialogOpen = false;
       e.preventDefault();
     }
     return;
@@ -103,6 +108,7 @@ onMounted(async () => {
 
   if (settings.lastFile) await openDocumentAt(settings.lastFile, { silent: true });
   booting.value = false;
+  await initMcp(settings);
 
   if (isTauri) {
     const { getCurrentWindow } = await import("@tauri-apps/api/window");
@@ -156,6 +162,7 @@ onBeforeUnmount(() => {
     <StatusBar />
     <PagePicker v-if="ui.picker" />
     <Dialogs />
+    <McpDialog v-if="ui.mcpDialogOpen" />
   </div>
 </template>
 

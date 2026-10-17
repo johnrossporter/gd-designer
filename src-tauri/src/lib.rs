@@ -1,3 +1,5 @@
+mod mcp;
+
 use std::fs;
 use std::path::PathBuf;
 
@@ -38,10 +40,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .manage(mcp::McpState::default())
         .invoke_handler(tauri::generate_handler![
             read_document,
             write_document,
-            file_exists
+            file_exists,
+            mcp::mcp_start,
+            mcp::mcp_stop,
+            mcp::mcp_respond
         ])
         .run(tauri::generate_context!())
         .expect("error while running GDDesigner");

@@ -237,17 +237,25 @@ export async function deletePage(id?: string) {
     danger: true,
   });
   if (!ok) return;
+  removePage(target);
+}
 
+/** Deletes a page and its sub-pages without asking, keeping a sensible page open. */
+export function removePage(id: string): string[] {
+  const { doc, ui } = stores();
+  const page = doc.pages[id];
+  if (!page) return [];
   // Pick the page to show afterwards: next sibling, else previous, else parent.
-  const sibs = doc.siblingsOf(target);
-  const i = sibs.indexOf(target);
+  const sibs = doc.siblingsOf(id);
+  const i = sibs.indexOf(id);
   const next = sibs[i + 1] ?? sibs[i - 1] ?? page.parentId;
-  const removed = new Set(doc.deletePage(target));
-  if (ui.activePageId && removed.has(ui.activePageId)) {
+  const removed = doc.deletePage(id);
+  if (ui.activePageId && removed.includes(ui.activePageId)) {
     ui.activePageId = null;
     if (next) openPage(next);
     else if (doc.rootIds[0]) openPage(doc.rootIds[0]);
   }
+  return removed;
 }
 
 export function movePageUp(id?: string) {
@@ -383,6 +391,10 @@ export function zoomReset() {
 
 export function showAbout() {
   stores().ui.aboutOpen = true;
+}
+
+export function showMcpSettings() {
+  stores().ui.mcpDialogOpen = true;
 }
 
 export function showShortcuts() {

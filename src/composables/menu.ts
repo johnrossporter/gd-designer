@@ -113,6 +113,17 @@ export function buildMenus(): Menu[] {
       ],
     },
     {
+      label: "Tools",
+      mnemonic: "t",
+      items: () => [
+        {
+          label: "AI Agent Access (MCP)…",
+          action: A.showMcpSettings,
+          checked: ui.mcp.running,
+        },
+      ],
+    },
+    {
       label: "Help",
       mnemonic: "h",
       items: () => [
