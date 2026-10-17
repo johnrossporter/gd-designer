@@ -294,7 +294,21 @@ export function goToPage() {
 export function focusFilter() {
   const { ui } = stores();
   if (!ui.hierarchyVisible) toggleHierarchy();
+  ui.sidebarView = "pages";
   ui.focusFilterTick++;
+}
+
+/** Opens the Search pane, seeded with the text selected in the editor (if any). */
+export function searchAllPages() {
+  const { doc, ui } = stores();
+  if (!doc.isOpen) return;
+  if (!ui.hierarchyVisible) toggleHierarchy();
+  const selection = window.getSelection()?.toString().trim() ?? "";
+  if (selection && !selection.includes("\n") && selection.length <= 100 && activeEditor()?.hasFocus()) {
+    ui.search.query = selection;
+  }
+  ui.sidebarView = "search";
+  ui.focusSearchTick++;
 }
 
 // ------------------------------------------------------------------ edit

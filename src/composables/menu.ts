@@ -68,6 +68,7 @@ export function buildMenus(): Menu[] {
         { label: "Select All", shortcut: "Ctrl+A", action: A.selectAll, keepFocus: true },
         sep,
         { label: "Filter Pages", shortcut: "Ctrl+F", action: A.focusFilter, disabled: noDoc() },
+        { label: "Search All Pages", shortcut: "Ctrl+Shift+F", action: A.searchAllPages, disabled: noDoc() },
         { label: "Go to Page…", shortcut: "Ctrl+P", action: A.goToPage, disabled: noDoc() },
       ],
     },
@@ -148,6 +149,7 @@ const shortcuts: Shortcut[] = [
   { combo: "ctrl+s", action: () => undefined }, // Autosave: swallow the browser's "save page".
   { combo: "ctrl+w", action: A.closeDocument },
   { combo: "ctrl+f", action: A.focusFilter },
+  { combo: "ctrl+shift+f", action: A.searchAllPages },
   { combo: "ctrl+p", action: A.goToPage },
   { combo: "ctrl+shift+n", action: () => A.newPage() },
   { combo: "ctrl+alt+n", action: () => A.newChildPage() },

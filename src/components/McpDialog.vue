@@ -2,7 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { useUiStore } from "../stores/ui";
 import { isTauri } from "../services/platform";
-import { mcpEndpoint, regenerateMcpToken, setMcpEnabled, setMcpPort } from "../mcp/service";
+import { mcpEndpoint, regenerateMcpToken, setMcpEnabled, setMcpPort, setMcpRequireToken } from "../mcp/service";
 
 const ui = useUiStore();
 const showToken = ref(false);
@@ -17,21 +17,19 @@ watch(
 const endpoint = computed(() => mcpEndpoint(ui.mcp.port));
 const shownToken = computed(() => (showToken.value ? ui.mcp.token : "•".repeat(24)));
 
-const claudeCommand = computed(
-  () =>
-    `claude mcp add --transport http gddesigner ${endpoint.value} --header "Authorization: Bearer ${ui.mcp.token}"`,
+const authHeader = (token: string) => (ui.mcp.requireToken ? ` --header "Authorization: Bearer ${token}"` : "");
+const claudeCommand = computed(() => `claude mcp add --transport http gddesigner ${endpoint.value}${authHeader(ui.mcp.token)}`);
+const shownCommand = computed(
+  () => `claude mcp add --transport http gddesigner ${endpoint.value}${authHeader(showToken.value ? ui.mcp.token : "…")}`,
 );
-const jsonConfig = computed(() =>
-  JSON.stringify(
-    {
-      mcpServers: {
-        gddesigner: { type: "http", url: endpoint.value, headers: { Authorization: `Bearer ${ui.mcp.token}` } },
-      },
-    },
-    null,
-    2,
-  ),
-);
+
+function jsonFor(token: string) {
+  const server: Record<string, unknown> = { type: "http", url: endpoint.value };
+  if (ui.mcp.requireToken) server.headers = { Authorization: `Bearer ${token}` };
+  return JSON.stringify({ mcpServers: { gddesigner: server } }, null, 2);
+}
+const jsonConfig = computed(() => jsonFor(ui.mcp.token));
+const shownJson = computed(() => jsonFor(showToken.value ? ui.mcp.token : "…"));
 
 async function copy(label: string, text: string) {
   try {
@@ -82,7 +80,21 @@ const status = computed(() => {
         <span class="hint">Only reachable from this computer (127.0.0.1).</span>
       </div>
 
-      <div class="field">
+      <label class="toggle small-toggle">
+        <input
+          type="checkbox"
+          :checked="ui.mcp.requireToken"
+          :disabled="!isTauri"
+          @change="setMcpRequireToken(($event.target as HTMLInputElement).checked)"
+        />
+        <span>Require access token</span>
+      </label>
+      <p v-if="!ui.mcp.requireToken" class="warn">
+        Any program running on this computer can read and change your notes while access is on. Web pages are still
+        blocked.
+      </p>
+
+      <div v-if="ui.mcp.requireToken" class="field">
         <label>Access token</label>
         <code class="token">{{ shownToken }}</code>
         <button @click="showToken = !showToken">{{ showToken ? "Hide" : "Show" }}</button>
@@ -92,17 +104,22 @@ const status = computed(() => {
 
       <h4>Connect Claude Code</h4>
       <div class="snippet">
-        <pre>claude mcp add --transport http gddesigner {{ endpoint }} --header "Authorization: Bearer {{ showToken ? ui.mcp.token : '…' }}"</pre>
+        <pre>{{ shownCommand }}</pre>
         <button @click="copy('cmd', claudeCommand)">{{ copied === "cmd" ? "Copied" : "Copy" }}</button>
       </div>
 
       <h4>Other MCP clients (JSON config)</h4>
       <div class="snippet">
-        <pre>{{ showToken ? jsonConfig : jsonConfig.replace(ui.mcp.token, "…") }}</pre>
+        <pre>{{ shownJson }}</pre>
         <button @click="copy('json', jsonConfig)">{{ copied === "json" ? "Copied" : "Copy" }}</button>
       </div>
 
-      <p class="muted small">Keep the token private: anyone with it can change your notes while GDDesigner is open.</p>
+      <p v-if="ui.mcp.requireToken" class="muted small">
+        Keep the token private: anyone with it can change your notes while GDDesigner is open.
+      </p>
+      <p v-else class="muted small">
+        Already connected with a token? Clients that still send it keep working; you can also re-add them without it.
+      </p>
       <div class="buttons"><button class="primary" @click="ui.mcpDialogOpen = false">Close</button></div>
     </div>
   </div>
@@ -160,6 +177,15 @@ p {
   width: 16px;
   height: 16px;
   accent-color: var(--accent);
+}
+.small-toggle {
+  font-weight: normal;
+  margin-bottom: 8px;
+}
+.warn {
+  margin: -2px 0 12px 24px;
+  font-size: 12.5px;
+  color: var(--warn);
 }
 .status {
   display: flex;

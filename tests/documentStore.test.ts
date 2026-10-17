@@ -70,6 +70,22 @@ describe("document store", () => {
     expect(store.indent(c)).toBe(false);
   });
 
+  it("sorts direct children alphabetically, not recursively", () => {
+    const { store, root } = setup();
+    const c10 = store.createPage({ parentId: root, title: "Chapter 10" });
+    const blank = store.createPage({ parentId: root, title: "" });
+    const b = store.createPage({ parentId: root, title: "beta" });
+    const c2 = store.createPage({ parentId: root, title: "Chapter 2" });
+    const a = store.createPage({ parentId: root, title: "Alpha" });
+    const z = store.createPage({ parentId: a, title: "Zed" });
+    const y = store.createPage({ parentId: a, title: "Yak" });
+    expect(store.sortChildren(root)).toBe(true);
+    expect(store.pages[root].children).toEqual([a, b, c2, c10, blank]);
+    expect(store.pages[a].children).toEqual([z, y]);
+    expect(store.sortChildren(root)).toBe(false);
+    expect(store.sortChildren(c2)).toBe(false);
+  });
+
   it("moves within the same list using pre-move indices", () => {
     const { store, root } = setup();
     const a = store.createPage({ parentId: root, title: "A" });

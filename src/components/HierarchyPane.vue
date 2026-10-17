@@ -189,6 +189,14 @@ function openContext(e: MouseEvent, id: string | null) {
         { label: "Move Down", action: () => A.movePageDown(id), disabled: idx >= sibs.length - 1 },
         { label: "Indent (Make Child)", action: () => A.indentPage(id), disabled: idx <= 0 },
         { label: "Outdent", action: () => A.outdentPage(id), disabled: !page?.parentId },
+        {
+          label: "Sort Children",
+          action: () => {
+            doc.sortChildren(id);
+            ui.setExpanded(id, true);
+          },
+          disabled: (page?.children.length ?? 0) < 2,
+        },
         { separator: true },
         { label: "Delete…", shortcut: "Del", action: () => A.deletePage(id) },
       ]

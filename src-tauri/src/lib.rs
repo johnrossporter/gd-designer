@@ -1,4 +1,5 @@
 mod mcp;
+mod titlebar;
 
 use std::fs;
 use std::path::PathBuf;
@@ -47,7 +48,8 @@ pub fn run() {
             file_exists,
             mcp::mcp_start,
             mcp::mcp_stop,
-            mcp::mcp_respond
+            mcp::mcp_respond,
+            titlebar::set_titlebar_colors
         ])
         .run(tauri::generate_context!())
         .expect("error while running GDDesigner");

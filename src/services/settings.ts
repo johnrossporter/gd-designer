@@ -18,6 +18,7 @@ export interface Settings {
   mcpEnabled: boolean;
   mcpPort: number;
   mcpToken: string;
+  mcpRequireToken: boolean;
 }
 
 export const defaultSettings: Settings = {
@@ -30,6 +31,7 @@ export const defaultSettings: Settings = {
   mcpEnabled: false,
   mcpPort: 3917,
   mcpToken: "",
+  mcpRequireToken: true,
 };
 
 const MAX_RECENT = 10;

@@ -34,6 +34,7 @@ const shortcuts: [string, string][] = [
   ["Alt+Shift+→ / ←", "Indent / outdent page"],
   ["Ctrl+L or [[", "Insert link to a page"],
   ["Ctrl+F", "Filter the hierarchy"],
+  ["Ctrl+Shift+F", "Search all pages (Enter / Shift+Enter: next / previous match)"],
   ["Ctrl+P", "Go to page"],
   ["Ctrl+\\", "Show / hide hierarchy"],
   ["Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / reset"],

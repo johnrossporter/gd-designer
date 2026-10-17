@@ -2,6 +2,7 @@ import { useDocumentStore } from "../stores/document";
 import { useUiStore } from "../stores/ui";
 import { removePage } from "../services/actions";
 import { displayTitle, pageUrl, parsePageUrl, syncLinkTitles } from "../lib/pageLinks";
+import { searchPages } from "../lib/search";
 import type { Page } from "../types/document";
 
 /**
@@ -215,38 +216,41 @@ const TOOLS: ToolDef[] = [
   {
     name: "search_pages",
     title: "Search pages",
-    description: "Finds pages whose title (and optionally content) contains the query, case-insensitively.",
+    description:
+      "Finds pages whose title or visible text contains the query (case-insensitive unless match_case). " +
+      "Returns each page with its number of matches and short snippets; pages with title matches come first.",
     inputSchema: {
       type: "object",
       properties: {
         query: { type: "string", description: "Text to look for." },
         include_content: { type: "boolean", description: "Also search page content. Default true." },
-        limit: { type: "integer", minimum: 1, maximum: 200, description: "Maximum results. Default 25." },
+        match_case: { type: "boolean", description: "Case-sensitive search. Default false." },
+        whole_word: { type: "boolean", description: "Only match whole words. Default false." },
+        limit: { type: "integer", minimum: 1, maximum: 200, description: "Maximum pages returned. Default 25." },
       },
       required: ["query"],
     },
     annotations: { readOnlyHint: true },
     run: (args) => {
       const doc = requireDoc();
-      const q = (optionalString(args, "query") ?? "").trim().toLowerCase();
-      if (!q) throw new ToolError("query must not be empty.");
+      const query = (optionalString(args, "query") ?? "").trim();
+      if (!query) throw new ToolError("query must not be empty.");
       const inContent = args.include_content !== false;
       const limit = typeof args.limit === "number" ? args.limit : 25;
-      const results = [];
-      for (const id of doc.orderedIds()) {
-        const p = doc.pages[id];
-        const titleHit = p.title.toLowerCase().includes(q);
-        const at = inContent ? p.content.toLowerCase().indexOf(q) : -1;
-        if (!titleHit && at < 0) continue;
-        const snippet =
-          at >= 0
-            ? (at > 60 ? "…" : "") +
-              p.content.slice(Math.max(0, at - 60), at + q.length + 60).replace(/\s+/g, " ") +
-              (at + q.length + 60 < p.content.length ? "…" : "")
-            : undefined;
-        results.push({ ...summary(p), path: pathOf(id), matched: titleHit ? "title" : "content", snippet });
-        if (results.length >= limit) break;
-      }
+      const found = searchPages(doc.pages, doc.orderedIds(), query, {
+        matchCase: args.match_case === true,
+        wholeWord: args.whole_word === true,
+      })
+        .filter((r) => r.titleMatch || inContent)
+        .slice(0, limit);
+      const results = found.map((r) => ({
+        id: r.id,
+        title: r.title,
+        path: pathOf(r.id),
+        matched: r.titleMatch ? "title" : "content",
+        content_matches: inContent ? r.total : undefined,
+        snippets: inContent ? r.hits.slice(0, 3).map((h) => h.snippet) : undefined,
+      }));
       return json({ count: results.length, results });
     },
   },

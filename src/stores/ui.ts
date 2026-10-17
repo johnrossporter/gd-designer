@@ -37,11 +37,20 @@ export const useUiStore = defineStore("ui", () => {
   const shortcutsOpen = ref(false);
   const mcpDialogOpen = ref(false);
 
+  /** Which view the left pane shows. */
+  const sidebarView = ref<"pages" | "search">("pages");
+  /** Full-text search across all pages. */
+  const search = reactive({ query: "", matchCase: false, wholeWord: false });
+  /** Ask the editor of `pageId` to scroll to a search match. `seq` makes repeats distinct. */
+  const searchReveal = ref<{ pageId: string; occurrence: number; focus: boolean; seq: number } | null>(null);
+  const focusSearchTick = ref(0);
+
   /** State of the local MCP endpoint for AI agents. */
   const mcp = reactive({
     enabled: false,
     port: 3917,
     token: "",
+    requireToken: true,
     running: false,
     error: null as string | null,
   });
@@ -98,6 +107,10 @@ export const useUiStore = defineStore("ui", () => {
     aboutOpen,
     shortcutsOpen,
     mcpDialogOpen,
+    sidebarView,
+    search,
+    searchReveal,
+    focusSearchTick,
     mcp,
     mcpActivity,
     focusFilterTick,

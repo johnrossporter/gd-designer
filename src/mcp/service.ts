@@ -58,7 +58,7 @@ export async function applyMcp(): Promise<void> {
     return;
   }
   try {
-    await invoke("mcp_start", { port: ui.mcp.port, token: ui.mcp.token });
+    await invoke("mcp_start", { port: ui.mcp.port, token: ui.mcp.requireToken ? ui.mcp.token : null });
     ui.mcp.running = true;
     ui.mcp.error = null;
   } catch (e) {
@@ -73,6 +73,7 @@ export async function initMcp(settings: Settings): Promise<void> {
   ui.mcp.enabled = settings.mcpEnabled === true;
   ui.mcp.port = Number.isInteger(settings.mcpPort) ? settings.mcpPort : 3917;
   ui.mcp.token = typeof settings.mcpToken === "string" ? settings.mcpToken : "";
+  ui.mcp.requireToken = settings.mcpRequireToken !== false;
   if (ui.mcp.token.length < 16) {
     ui.mcp.token = generateToken();
     await saveSetting("mcpToken", ui.mcp.token);
@@ -95,6 +96,13 @@ export async function setMcpPort(port: number) {
   }
   ui.mcp.port = port;
   await saveSetting("mcpPort", port);
+  await applyMcp();
+}
+
+export async function setMcpRequireToken(required: boolean) {
+  const ui = useUiStore();
+  ui.mcp.requireToken = required;
+  await saveSetting("mcpRequireToken", required);
   await applyMcp();
 }
 

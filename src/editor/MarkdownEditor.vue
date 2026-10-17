@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Crepe } from "@milkdown/crepe";
 import { editorViewCtx } from "@milkdown/kit/core";
 import { callCommand, insert, replaceAll } from "@milkdown/kit/utils";
@@ -9,7 +9,10 @@ import { TextSelection } from "@milkdown/kit/prose/state";
 import "@milkdown/crepe/theme/common/style.css";
 import { pageLinkPlugins } from "./pageLinkPlugin";
 import { clearActiveEditor, setActiveEditor, type EditorHandle } from "./bridge";
+import { searchHighlightPlugin, searchKey, type SearchMeta } from "./searchHighlight";
 import { useDocumentStore } from "../stores/document";
+import { useUiStore } from "../stores/ui";
+import { buildMatcher } from "../lib/search";
 import { openExternalUrl } from "../services/fileService";
 import { parsePageUrl } from "../lib/pageLinks";
 
@@ -20,6 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const doc = useDocumentStore();
+const ui = useUiStore();
 const root = ref<HTMLElement | null>(null);
 let crepe: Crepe | null = null;
 let ready = false;
@@ -93,7 +97,42 @@ const handle: EditorHandle = {
     if (crepe && ready && dirty) save(crepe.getMarkdown());
   },
   hasFocus: () => withView((view) => view.hasFocus()) ?? false,
+  revealMatch: (occurrence, focus = false) =>
+    withView((view) => {
+      const ranges = searchKey.getState(view.state)?.ranges ?? [];
+      if (!ranges.length) return;
+      const index = Math.min(Math.max(occurrence, 0), ranges.length - 1);
+      const range = ranges[index];
+      const tr = view.state.tr.setMeta(searchKey, { current: index } satisfies SearchMeta);
+      if (focus) tr.setSelection(TextSelection.create(tr.doc, range.from, range.to));
+      view.dispatch(tr);
+      const { node } = view.domAtPos(range.from);
+      const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as HTMLElement);
+      el?.scrollIntoView({ block: "center", behavior: "smooth" });
+      if (focus) view.focus();
+    }),
 };
+
+// ------------------------------------------------------------------ search highlighting
+
+/** The search matcher to highlight, while the Search pane is showing a query. */
+const highlightMatcher = computed(() =>
+  ui.hierarchyVisible && ui.sidebarView === "search"
+    ? buildMatcher(ui.search.query, { matchCase: ui.search.matchCase, wholeWord: ui.search.wholeWord })
+    : null,
+);
+
+function applyHighlight() {
+  withView((view) => view.dispatch(view.state.tr.setMeta(searchKey, { matcher: highlightMatcher.value, current: -1 })));
+}
+
+function applyReveal() {
+  const r = ui.searchReveal;
+  if (r && r.pageId === props.pageId && r.occurrence >= 0) handle.revealMatch(r.occurrence, r.focus);
+}
+
+watch(highlightMatcher, applyHighlight);
+watch(() => ui.searchReveal, applyReveal);
 
 /** Ordinary (non-page) links open in the system browser instead of the app window. */
 function onClick(e: MouseEvent) {
@@ -129,7 +168,12 @@ onMounted(async () => {
       },
     },
   });
-  crepe.editor.use(remarkPageLink).use(pageLinkSchema).use(pageLinkView).use(pageLinkInput);
+  crepe.editor
+    .use(remarkPageLink)
+    .use(pageLinkSchema)
+    .use(pageLinkView)
+    .use(pageLinkInput)
+    .use(searchHighlightPlugin((id) => doc.pages[id]?.title));
   crepe.on((listener) => {
     listener.updated(() => {
       dirty = true;
@@ -143,6 +187,8 @@ onMounted(async () => {
   }
   ready = true;
   setActiveEditor(handle);
+  applyHighlight();
+  applyReveal();
 });
 
 onBeforeUnmount(() => {

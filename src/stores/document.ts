@@ -306,6 +306,27 @@ export const useDocumentStore = defineStore("document", () => {
     return movePage(id, pages[id].parentId, i + 2);
   }
 
+  /**
+   * Sorts a page's direct children alphabetically by title (not recursive).
+   * Natural order ("Chapter 2" before "Chapter 10"), case-insensitive; untitled pages go last.
+   * Returns false when there was nothing to reorder.
+   */
+  function sortChildren(id: string): boolean {
+    const page = pages[id];
+    if (!page || page.children.length < 2) return false;
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+    const sorted = [...page.children].sort((a, b) => {
+      const ta = pages[a].title.trim();
+      const tb = pages[b].title.trim();
+      if (!ta || !tb) return ta ? -1 : tb ? 1 : 0;
+      return collator.compare(ta, tb);
+    });
+    if (sorted.every((cid, i) => cid === page.children[i])) return false;
+    page.children.splice(0, page.children.length, ...sorted);
+    touch();
+    return true;
+  }
+
   /** Makes the page the last child of its previous sibling. */
   function indent(id: string): boolean {
     const sibs = siblingsOf(id);
@@ -355,6 +376,7 @@ export const useDocumentStore = defineStore("document", () => {
     movePage,
     moveUp,
     moveDown,
+    sortChildren,
     indent,
     outdent,
   };

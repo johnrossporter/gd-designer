@@ -1,7 +1,8 @@
 //! Local MCP (Model Context Protocol) endpoint.
 //!
 //! This module is only the transport: a small HTTP server on 127.0.0.1 that
-//! accepts MCP "Streamable HTTP" POSTs, checks the bearer token, and forwards
+//! accepts MCP "Streamable HTTP" POSTs, checks the Host/Origin (and the bearer
+//! token, when one is required), and forwards
 //! each JSON-RPC message to the frontend as an `mcp-request` event. The
 //! frontend (`src/mcp/handler.ts`) runs the request against the live document
 //! and answers through the `mcp_respond` command.
@@ -35,10 +36,12 @@ struct McpRequestEvent {
 }
 
 /// Starts (or restarts) the endpoint at `http://127.0.0.1:<port>/mcp`.
+/// With `token` set, requests must send `Authorization: Bearer <token>`;
+/// with `None`, any local program may connect.
 #[tauri::command]
-pub fn mcp_start(app: AppHandle, state: State<McpState>, port: u16, token: String) -> Result<(), String> {
+pub fn mcp_start(app: AppHandle, state: State<McpState>, port: u16, token: Option<String>) -> Result<(), String> {
     stop(&state);
-    if token.len() < 16 {
+    if token.as_ref().is_some_and(|t| t.len() < 16) {
         return Err("The access token is too short.".into());
     }
     let server = Server::http(("127.0.0.1", port))
@@ -53,7 +56,7 @@ pub fn mcp_start(app: AppHandle, state: State<McpState>, port: u16, token: Strin
             let pending = pending.clone();
             let next_id = next_id.clone();
             let token = token.clone();
-            thread::spawn(move || handle(request, &app, &pending, &next_id, &token));
+            thread::spawn(move || handle(request, &app, &pending, &next_id, token.as_deref()));
         }
     });
     *state.server.lock().unwrap() = Some(server);
@@ -107,19 +110,32 @@ fn origin_allowed(origin: &str) -> bool {
         || o.starts_with("http://tauri.localhost")
 }
 
-fn handle(mut request: Request, app: &AppHandle, pending: &Pending, next_id: &AtomicU64, token: &str) {
+/// The Host header must name this machine. A web page using DNS rebinding
+/// reaches us under its own domain name, so this rejects it even without a token.
+fn host_allowed(host: &str) -> bool {
+    let h = host.to_ascii_lowercase();
+    let name = h.rsplit_once(':').map_or(h.as_str(), |(n, _)| n);
+    matches!(name, "127.0.0.1" | "localhost" | "[::1]")
+}
+
+fn handle(mut request: Request, app: &AppHandle, pending: &Pending, next_id: &AtomicU64, token: Option<&str>) {
     let path = request.url().split('?').next().unwrap_or("").to_string();
     if path != "/mcp" {
         return reply(request, 404, "Not found. The MCP endpoint is /mcp.", false);
+    }
+    if !header(&request, "Host").is_some_and(|h| host_allowed(&h)) {
+        return reply(request, 403, "Host not allowed.", false);
     }
     if let Some(origin) = header(&request, "Origin") {
         if !origin_allowed(&origin) {
             return reply(request, 403, "Origin not allowed.", false);
         }
     }
-    let expected = format!("Bearer {token}");
-    if header(&request, "Authorization").as_deref() != Some(expected.as_str()) {
-        return reply(request, 401, "Missing or invalid access token.", false);
+    if let Some(token) = token {
+        let expected = format!("Bearer {token}");
+        if header(&request, "Authorization").as_deref() != Some(expected.as_str()) {
+            return reply(request, 401, "Missing or invalid access token.", false);
+        }
     }
     match request.method() {
         Method::Post => {}
@@ -161,5 +177,27 @@ fn handle(mut request: Request, app: &AppHandle, pending: &Pending, next_id: &At
             pending.lock().unwrap().remove(&id);
             reply(request, 504, "GDDesigner did not answer in time.", false);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{host_allowed, origin_allowed};
+
+    #[test]
+    fn hosts() {
+        assert!(host_allowed("127.0.0.1:3917"));
+        assert!(host_allowed("localhost:3917"));
+        assert!(host_allowed("LOCALHOST"));
+        assert!(host_allowed("[::1]:3917"));
+        assert!(!host_allowed("evil.example:3917"));
+        assert!(!host_allowed("127.0.0.1.evil.example"));
+    }
+
+    #[test]
+    fn origins() {
+        assert!(origin_allowed("http://localhost:1420"));
+        assert!(origin_allowed("tauri://localhost"));
+        assert!(!origin_allowed("https://evil.example"));
     }
 }

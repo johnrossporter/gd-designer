@@ -65,7 +65,8 @@ html,
 body {
   margin: 0;
   height: 100%;
-  overflow: hidden;
+  /* clip (not hidden) so scrollIntoView can never scroll the window itself */
+  overflow: clip;
   background: var(--page-bg);
   color: var(--text);
   font-family: var(--font-ui);
@@ -172,6 +173,26 @@ button.danger:hover {
 }
 .markdown-editor .milkdown .milkdown-block-handle {
   margin-left: -8px;
+}
+
+/* Search matches (Search pane). */
+.markdown-editor .search-match {
+  background: var(--highlight);
+  border-radius: 2px;
+}
+.markdown-editor .search-match.current {
+  background: #ff9632;
+  color: #1f2328;
+  box-shadow: 0 0 0 1px #ff9632;
+}
+
+/* Left-align block images and their captions (Crepe centers them). */
+.markdown-editor .milkdown .milkdown-image-block > .image-wrapper {
+  margin-left: 0;
+  margin-right: auto;
+}
+.markdown-editor .milkdown .milkdown-image-block > .caption-input {
+  text-align: left;
 }
 
 .markdown-editor .page-link {

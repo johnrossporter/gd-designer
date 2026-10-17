@@ -5,10 +5,12 @@ import { useUiStore } from "./stores/ui";
 import { handleShortcut } from "./composables/menu";
 import { flushSave, startAutosave } from "./services/autosave";
 import { loadSettings, saveSetting } from "./services/settings";
-import { openDocumentAt } from "./services/actions";
+import { openDocumentAt, searchAllPages } from "./services/actions";
 import { isTauri } from "./services/platform";
+import { syncTitlebarColors } from "./services/titlebar";
 import MenuBar from "./components/MenuBar.vue";
 import HierarchyPane from "./components/HierarchyPane.vue";
+import SearchPane from "./components/SearchPane.vue";
 import PageView from "./components/PageView.vue";
 import StatusBar from "./components/StatusBar.vue";
 import WelcomeScreen from "./components/WelcomeScreen.vue";
@@ -31,6 +33,7 @@ systemDark.addEventListener("change", onSystemTheme);
 watchEffect(() => {
   const dark = ui.theme === "dark" || (ui.theme === "system" && prefersDark.value);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
+  void syncTitlebarColors(dark);
 });
 
 // ------------------------------------------------------------------ window title
@@ -142,7 +145,30 @@ onBeforeUnmount(() => {
   <div class="app" :class="{ resizing }">
     <MenuBar />
     <main v-if="doc.isOpen" class="workspace" :style="{ gridTemplateColumns: gridColumns }">
-      <HierarchyPane v-if="ui.hierarchyVisible" />
+      <aside v-if="ui.hierarchyVisible" class="sidebar">
+        <div class="side-tabs" role="tablist">
+          <button
+            role="tab"
+            :aria-selected="ui.sidebarView === 'pages'"
+            :class="{ on: ui.sidebarView === 'pages' }"
+            title="Page hierarchy (Ctrl+F to filter)"
+            @click="ui.sidebarView = 'pages'"
+          >
+            Pages
+          </button>
+          <button
+            role="tab"
+            :aria-selected="ui.sidebarView === 'search'"
+            :class="{ on: ui.sidebarView === 'search' }"
+            title="Search all pages (Ctrl+Shift+F)"
+            @click="searchAllPages"
+          >
+            Search
+          </button>
+        </div>
+        <HierarchyPane v-show="ui.sidebarView === 'pages'" class="side-view" />
+        <SearchPane v-show="ui.sidebarView === 'search'" class="side-view" />
+      </aside>
       <div
         v-if="ui.hierarchyVisible"
         class="splitter"
@@ -178,10 +204,47 @@ onBeforeUnmount(() => {
 }
 .workspace {
   display: grid;
+  /* One row exactly as tall as the space available, so long pages scroll inside the page view. */
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
 }
 .workspace.single {
   grid-template-columns: 1fr;
+}
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--sidebar-bg);
+}
+.side-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.side-tabs button {
+  padding: 5px 12px 6px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.side-tabs button:hover {
+  color: var(--text);
+}
+.side-tabs button.on {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.side-view {
+  flex: 1;
+  min-height: 0;
 }
 .splitter {
   cursor: col-resize;

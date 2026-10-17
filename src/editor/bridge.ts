@@ -14,6 +14,11 @@ export interface EditorHandle {
   flush(): void;
   /** True when the editor (rather than some other input) has focus. */
   hasFocus(): boolean;
+  /**
+   * Marks the `occurrence`-th search match as current and scrolls to it.
+   * With `focus`, also selects it and moves keyboard focus into the editor.
+   */
+  revealMatch(occurrence: number, focus?: boolean): void;
 }
 
 let active: EditorHandle | null = null;
